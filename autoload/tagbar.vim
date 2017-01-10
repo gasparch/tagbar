@@ -4,7 +4,7 @@
 " Author:      Jan Larres <jan@majutsushi.net>
 " Licence:     Vim licence
 " Website:     http://majutsushi.github.com/tagbar/
-" Version:     2.6.1
+" Version:     2.7
 " Note:        This plugin was heavily inspired by the 'Taglist' plugin by
 "              Yegappan Lakshmanan and uses a small amount of code from it.
 "
@@ -1255,7 +1255,7 @@ endfunction
 
 " s:GetSupportedFiletypes() {{{2
 function! s:GetSupportedFiletypes() abort
-    call s:debug('Getting filetypes sypported by Exuberant Ctags')
+    call s:debug('Getting filetypes supported by Exuberant Ctags')
 
     let ctags_cmd = s:EscapeCtagsCmd(g:tagbar_ctags_bin, '--list-languages')
     if ctags_cmd == ''
@@ -1273,7 +1273,9 @@ function! s:GetSupportedFiletypes() abort
     let types = split(ctags_output, '\n\+')
 
     for type in types
-        let s:ctags_types[tolower(type)] = 1
+        if match(type, '\[disabled\]') == -1
+            let s:ctags_types[tolower(type)] = 1
+        endif
     endfor
 
     let s:checked_ctags_types = 1
