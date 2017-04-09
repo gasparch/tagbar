@@ -2301,6 +2301,13 @@ function! s:ProcessFile(fname, ftype) abort
     " Parse the ctags output lines
     call s:debug('Parsing ctags output')
     let rawtaglist = split(ctags_output, '\n\+')
+
+    " Allow filetype totally rewrite ctags output
+    if has_key(typeinfo, 'transform')
+        call s:debug('Transforming tags using custom function')
+        let rawtaglist = typeinfo.transform(rawtaglist)
+    endif
+
     for line in rawtaglist
         " skip comments
         if line =~# '^!_TAG_'
@@ -2312,35 +2319,6 @@ function! s:ProcessFile(fname, ftype) abort
             call s:ParseTagline(parts[0], parts[1], typeinfo, fileinfo)
         endif
     endfor
-
-    " Allow filetype totally transform/remove some tags
-    if has_key(typeinfo, 'transform')
-        call s:debug('Transforming tags using custom function')
-
-        let fileinfo.tags = typeinfo.transform(fileinfo.tags)
-    endif
-
-    " Process scoped tags
-    let processedtags = []
-    if has_key(typeinfo, 'kind2scope')
-        call s:debug('Processing scoped tags')
-
-        let scopedtags = []
-        let is_scoped = 'has_key(typeinfo.kind2scope, v:val.fields.kind) ||
-                       \ has_key(v:val, "scope")'
-        let scopedtags += filter(copy(fileinfo.tags), is_scoped)
-        call filter(fileinfo.tags, '!(' . is_scoped . ')')
-
-        call s:AddScopedTags(scopedtags, processedtags, {}, 0,
-                           \ typeinfo, fileinfo, line('$'))
-
-        if !empty(scopedtags)
-            echoerr 'Tagbar: ''scopedtags'' not empty after processing,'
-                  \ 'this should never happen!'
-                  \ 'Please contact the script maintainer with an example.'
-        endif
-    endif
-    call s:debug('Number of top-level tags: ' . len(processedtags))
 
     " Create a placeholder tag for the 'kind' header for folding purposes, but
     " only for non-scoped tags
@@ -4083,11 +4061,11 @@ function! s:GetTagInfoByName(tag_text) abort
         return {}
     endif
 
-    for taginfo in fileinfo.tags
-        if a:tag_text == taginfo.name
-            return taginfo
-        endif
-    endfor
+    let tags = fileinfo.getTagsByName(a:tag_text)
+
+    if len(tags) == 1
+        return tags[0]
+    end
 
     return {}
 endfunction
@@ -4716,14 +4694,12 @@ endfunction
 " tagbar#currenttags() {{{2
 function! tagbar#currenttags(bufname) abort
     call s:Init(0)
-"        return []
-"    endif
 
     let curfile = fnamemodify(a:bufname, ':p')
     call s:AutoUpdate(curfile, 1)
 
     let fileinfo = s:TagbarState().getCurrent(1)
-    let tags = map(copy(fileinfo.tags), "v:val.name")
+    let tags = map(copy(fileinfo.getTags()), 'v:val.name')
     return tags
 endfunction
 
