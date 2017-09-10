@@ -2825,7 +2825,7 @@ endfunction
 " Return the info dictionary of the tag by tag name.
 " If such tag name cannot be found return an empty dictionary.
 function! s:GetTagInfoByName(tag_text) abort
-    let fileinfo = s:TagbarState().getCurrent(0)
+    let fileinfo = tagbar#state#get_current_file(0)
 
     if empty(fileinfo)
         return {}
@@ -3407,7 +3407,8 @@ function! tagbar#currenttags(bufname) abort
     let curfile = fnamemodify(a:bufname, ':p')
     call s:AutoUpdate(curfile, 1)
 
-    let fileinfo = s:TagbarState().getCurrent(1)
+    let fileinfo = tagbar#state#get_current_file(1)
+
     let tags = map(copy(fileinfo.getTags()), 'v:val.name')
     return tags
 endfunction
