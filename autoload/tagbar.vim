@@ -1015,7 +1015,7 @@ function! s:ProcessFile(fname, ftype) abort
 
     " Allow filetype totally rewrite ctags output
     if has_key(typeinfo, 'transform')
-        call s:debug('Transforming tags using custom function')
+        call tagbar#debug#log('Transforming tags using custom function')
         let rawtaglist = typeinfo.transform(rawtaglist)
     endif
 
